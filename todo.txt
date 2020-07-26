@@ -1,0 +1,4 @@
+What was the day with the most messages?
+most messages per day
+
+This might be a little more involved, but what about tracking activity rate over time? For seeing things like how active the dirty chat mutes was at the beginning vs now (both in terms of messages and reacts)
