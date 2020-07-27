@@ -169,17 +169,34 @@ def tag_correlation_matrix(participant_names, total_messages):
     plt.savefig(f'pictures/corrmatrix.png')
 
 def mk_hmm_sequence(participant_names, total_messages):
-    return reduce(lambda a,b:str(a) + str(b), np.array([participant_names.index(i['sender_name']) for i in total_messages]))
+    return reduce(lambda a,b:str(a) + " " + str(b), np.array([participant_names.index(i['sender_name']) for i in total_messages]))
 
-def next_messager(forhmm, seq, participant_names):
-    iterable = re.finditer(seq, forhmm)
-    nextelement = np.array([forhmm[x] if (x:= m.span()[1] + 1) < len(forhmm) else -1 for m in iterable])
+def next_messager(total_messages_with_id, seq, participant_names, message_counts, normalizebymessagessent = True):
+    # iterable = re.finditer(seq, forhmm)
+    # nextelement = np.array([forhmm[x:x+2].strip(' ') if (x:= m.span()[1] + 1) < len(forhmm) else -1 for m in iterable])
+    nextelement = [participant_names.index(total_messages_with_id[k+1]['sender_name']) for k,v in total_messages_with_id.items() if v['sender_name'] == seq and k+1 < len(total_messages_with_id)]
     nextelementcounter = dict(Counter(nextelement))
     tonormalize = sum(nextelementcounter.values())
     normalizedcounter = {k:v / tonormalize for k,v in nextelementcounter.items()}
     probabilities = defaultdict(float)
-    for i in range(len(participant_names)):
-        probabilities[i] = 0.13 + (normalizedcounter[str(i)] if str(i) in normalizedcounter else 0)
+    if normalizebymessagessent:
+        for i in range(len(participant_names)):
+            probabilities[i] = (normalizedcounter[i] / message_counts[participant_names[i]] if i in normalizedcounter else 0) #
+    else:
+        for i in range(len(participant_names)):
+            probabilities[i] = (normalizedcounter[i] if i in normalizedcounter else 0) #
     tonormalize = sum(probabilities.values())
     probabilitiesnorm = {k:v / tonormalize for k,v in probabilities.items()}
     return probabilitiesnorm
+
+    # return probabilities
+
+def gen_reply_matrix(total_messages_with_id, participant_names, normalizebymessagessent = False):
+    message_counts = message_count(total_messages_with_id.values(), participant_names)
+    ld = np.array([list(next_messager(total_messages_with_id, name, participant_names, message_counts, normalizebymessagessent).values()) for name in participant_names])
+    f, ax = plt.subplots(figsize=(11, 10))
+    f.set_facecolor((1, 1, 1))
+    # cmap = sns.diverging_palette(0, max(flat_list(participantmatrix)), as_cmap=True)
+    sns.heatmap(ld, square = True, annot = True, center = 0, vmin = 0, vmax =  max(flat_list(ld)) / 2, cmap= 'coolwarm',  xticklabels=participant_names,yticklabels=participant_names )
+    plt.savefig('pictures/response_corr_matrix.png')
+    # plt.close()
