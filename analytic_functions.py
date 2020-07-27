@@ -1,5 +1,7 @@
 import os
 import sys
+from functools import reduce
+import re
 import pandas as pd
 import numpy as np
 import json
@@ -163,5 +165,21 @@ def tag_correlation_matrix(participant_names, total_messages):
     f, ax = plt.subplots(figsize=(11, 10))
     f.set_facecolor((1, 1, 1))
     # cmap = sns.diverging_palette(0, max(flat_list(participantmatrix)), as_cmap=True)
-    sns.heatmap(participantmatrix, square = True, annot = True, center = 0, vmin = 0, vmax = 50, cmap= 'coolwarm',  xticklabels=participant_names,yticklabels=participant_names )
+    sns.heatmap(participantmatrix, square = True, annot = True, center = 0, vmin = 0, vmax =  max(flat_list(participantmatrix)), cmap= 'coolwarm',  xticklabels=participant_names,yticklabels=participant_names )
     plt.savefig(f'pictures/corrmatrix.png')
+
+def mk_hmm_sequence(participant_names, total_messages):
+    return reduce(lambda a,b:str(a) + str(b), np.array([participant_names.index(i['sender_name']) for i in total_messages]))
+
+def next_messager(forhmm, seq, participant_names):
+    iterable = re.finditer(seq, forhmm)
+    nextelement = np.array([forhmm[x] if (x:= m.span()[1] + 1) < len(forhmm) else -1 for m in iterable])
+    nextelementcounter = dict(Counter(nextelement))
+    tonormalize = sum(nextelementcounter.values())
+    normalizedcounter = {k:v / tonormalize for k,v in nextelementcounter.items()}
+    probabilities = defaultdict(float)
+    for i in range(len(participant_names)):
+        probabilities[i] = 0.13 + (normalizedcounter[str(i)] if str(i) in normalizedcounter else 0)
+    tonormalize = sum(probabilities.values())
+    probabilitiesnorm = {k:v / tonormalize for k,v in probabilities.items()}
+    return probabilitiesnorm
