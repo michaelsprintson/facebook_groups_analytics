@@ -15,6 +15,11 @@ def sort_dict(input_dict, maxkeys = None, reverse = True):
     sorted_dict = {k:input_dict[k] for k in sorted_keys}
     return sorted_dict
 
+def addkey(d, key, val):
+    r = dict(d)
+    r[key] = val
+    return r
+
 
 def get_participant_names(mesasgefiles):
     participants = mesasgefiles[0]['participants']

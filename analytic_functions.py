@@ -69,7 +69,10 @@ def total_character_count(total_messages, participant_names):
 def most_reacted_to_message(total_messages_with_id):
     reacted_to_messages = {idx:i['reactions'] for idx, i in total_messages_with_id.items() if 'reactions' in i.keys()}
     maxid = sorted(reacted_to_messages, key = lambda i: len(reacted_to_messages[i]))[-1]
-    return total_messages_with_id[maxid]
+    reacted_to_message = total_messages_with_id[maxid]
+    reacted_to_message['reats_better'] = dict(Counter([react_encoding_to_name[i['reaction']] for i in reacted_to_message['reactions']]))
+    del reacted_to_message['reactions']
+    return reacted_to_message
 
 def reactions_for_participant(total_messages, participant):
     participant_messages = [i for i in total_messages if i['sender_name'] == participant]
@@ -82,10 +85,12 @@ def reaction_calc(total_reaction_list):
     reactions_stats = {k:{'number':v, 'reacts': {react_encoding_to_name[ki]:vi for ki,vi in subparticipant_reactions_func(total_reaction_list, k).items()}} for k,v in reaction_number_by_participant.items()}
     return reactions_stats
 
-def reactions_recieved_by_all(participant_names, total_messages, returntype = 'dict'):
+def reactions_recieved_by_all(participant_names, total_messages, returntype = 'dict', self_name = False):
     react_stats = {}
     for pname in participant_names:
         f_reactions_recieved_by_participant = reactions_for_participant(total_messages, pname)
+        if type(self_name) == str:
+            f_reactions_recieved_by_participant = [i for i in f_reactions_recieved_by_participant if i['actor'] == self_name]
         reaction_stats_for_participant = reaction_calc(f_reactions_recieved_by_participant)
         to_sum = [v['reacts'] for k,v in reaction_stats_for_participant.items()]
         sd = dict(pd.DataFrame(to_sum).sum())
@@ -120,14 +125,18 @@ def average_and_max_reactions_for_participant(total_messages, participant): ##BR
 
 def self_reacts(total_messages, participant):
     participant_messages = [i for i in total_messages if i['sender_name'] == participant] 
-    return messages_reactions_given_by_participant(participant_messages, participant)
+    self_reacted_messages = messages_reactions_given_by_participant(participant_messages, participant)
+    return [addkey(i, 'reactions', [react_encoding_to_name[j['reaction']] for j in i['reactions'] if j['actor'] == participant]) for i in self_reacted_messages];
 
 def messages_reactions_given_by_participant(total_messages, participant):
     return [i for i in total_messages if 'reactions' in i.keys() and len([j for j in i['reactions'] if j['actor'] == participant]) > 0]
 
-def reactions_given_by_participant(total_messages, participant):
+##THIS IS BROKEN
+def reactions_given_by_participant(total_messages, participant_names, participant):
+
     participant_messages = messages_reactions_given_by_participant(total_messages, participant)
-    return reactions_given_by_all(participant_messages)
+    react_stats =  reactions_recieved_by_all(participant_names, participant_messages, returntype='sorted', self_name = participant)
+    return react_stats
 
 def filter_word_list(si):
     sinoempty = [i for i in si if i != '']
@@ -150,7 +159,7 @@ def nickname_changes_and_times(total_messages, participant):
         if participant in i['content']:
             pnamedict[i['sender_name']].append(i['content'].split(participant)[1].strip(' to'))
             ptimedict[i['content'].split(participant)[1].strip(' to')] = i['timestamp_ms']
-    pnamereturn = pd.DataFrame(pd.Series(dict(pnamedict)))
+    pnamereturn = dict(pnamedict)
     
     ptimedict = sort_dict(ptimedict, reverse = False)
     pdl = list(ptimedict.values())
@@ -181,7 +190,7 @@ def usage_participant_highlighted(total_messages, participant_names, specialpn):
         else:
             plt.plot(hist, label = pn, linewidth = 0.4)
     plt.legend()
-    plt.savefig(f'pictures/{specialpn}_specific.png')
+    plt.savefig(f'pictures/{specialpn}/{specialpn}_specific.png')
 
 def word_usage_highlighted(total_messages, participant_names, wordiq):
     scam_stamps = [i['timestamp_ms'] for i in total_messages if 'content' in i and wordiq in i['content']]
