@@ -15,14 +15,38 @@ from nltk.corpus import stopwords
 stopWords = set(stopwords.words('english'))
 [stopWords.add(i) for i in ['u', 'like', 'yeah', 'ur', 'get', 'i\'m']];
 
+def wrap(pre):
+    def decorate(func):
+        def call(*args, **kwargs):
+            return pre(func, *args, **kwargs)
+        return call
+    return decorate
+
+# serves as a wrapper function - takes in function wrapped over and arguments passed to that function.
+# Either caches the results of that function or pulls results from existing cache.
+def plot_total_dicts(func, *args, **kwargs):
+    sel = func.__name__
+    fp = f'pictures/{sel}.png'
+    gdf = func(*args, **kwargs)
+    plot_dict(gdf)
+    plt.title(sel.replace('_', ' '))
+    plt.savefig(f'pictures/{sel}.png')
+    plt.close()
+    return gdf
+
+
+@wrap(plot_total_dicts)
 def message_count(total_messages, participant_names):
     return sort_dict({pn:len([i for i in total_messages if i['sender_name'] == pn]) for pn in participant_names})
 
 def plot_dict(d):
+    v = list(d.values())
+    cutoff = np.average(v)
     d = sort_dict(d, maxkeys = len(d) // 2)
+    d = {k:v for k,v in d.items() if v > cutoff}
     k = list(d.keys())
     v = d.values()
-    plt.figure(figsize = (10,10))
+    f = plt.figure(figsize = (10,10))
     bars = plt.barh(k, v)
     mb = max([x.get_width() for x in bars]) / 310.55
     for bar, name, value in zip(bars, k, v):
@@ -31,11 +55,14 @@ def plot_dict(d):
         # print(height, xposition)
         plt.text(height, xposition + 0.3, value)
         plt.text((height / 2) - (len(name)*mb), xposition + 0.3 ,  name)
+    f.set_facecolor((1, 1, 1))
     plt.axis('off')
 
+@wrap(plot_total_dicts)
 def average_character_count(total_messages, participant_names):
     return sort_dict({pn:np.average([len(i['content']) for i in total_messages if i['sender_name'] == pn and 'content' in i.keys() ]) for pn in participant_names})
 
+@wrap(plot_total_dicts)
 def total_character_count(total_messages, participant_names):
     return sort_dict({pn:sum([len(i['content']) for i in total_messages if i['sender_name'] == pn and 'content' in i.keys() ]) for pn in participant_names})
     
@@ -65,8 +92,11 @@ def reactions_recieved_by_all(participant_names, total_messages, returntype = 'd
         react_stats[pname] = {'total': sum(sd.values()), 'stats':sort_dict(sd)}
     if returntype == 'dict':
         return react_stats
-    return pd.DataFrame(react_stats).T.sort_values('total', ascending = False)
+    if returntype == 'combined':
+        return pd.DataFrame(react_stats).T.sort_values('total', ascending = False)
+    return dict_to_cols(pd.DataFrame(react_stats).T.sort_values('total', ascending = False), 'stats')
 
+# @wrap(plot_total_dicts)
 def react_to_messages_ratio(total_messages, participant_names):
     allreacts = list(react_encoding_to_name.values())
     messagecounts = message_count(total_messages, participant_names)
@@ -78,11 +108,11 @@ def react_to_messages_ratio(total_messages, participant_names):
 
 def reactions_recieved_by_participant(total_messages, participant):
     f_reactions_recieved_by_participant = reactions_for_participant(total_messages, participant)
-    return pd.DataFrame(reaction_calc(f_reactions_recieved_by_participant)).T
+    return dict_to_cols(pd.DataFrame(reaction_calc(f_reactions_recieved_by_participant)).T, 'reacts')
 
 def reactions_given_by_all(total_messages):
     reacted_to_messages = flat_list([i['reactions'] for i in total_messages if 'reactions' in i])
-    return pd.DataFrame(reaction_calc(reacted_to_messages)).T
+    return dict_to_cols(pd.DataFrame(reaction_calc(reacted_to_messages)).T, 'reacts')
     
 def average_and_max_reactions_for_participant(total_messages, participant): ##BROKEN BUT I DONT KNOW WHY
     reacted_to_messages = flat_list([i['reactions'] for i in total_messages if i['sender_name'] == participant and 'reactions' in i])
@@ -131,6 +161,7 @@ def nickname_changes_and_times(total_messages, participant):
 
     return pnamereturn, ptimereturn
 
+@wrap(plot_total_dicts)
 def group_name_changes_timeline(total_messages):
     group_name_changes = [i for i in total_messages if 'content' in i and 'named the group' in i['content']]
     names_to_times = [i['timestamp_ms'] for i in group_name_changes]
@@ -164,8 +195,9 @@ def word_usage_highlighted(total_messages, participant_names, wordiq):
     plt.legend()
     plt.savefig(f'pictures/{wordiq}_specific.png')
 
+@wrap(plot_total_dicts)
 def most_common_photo_sender(total_messages):
-    return pd.Series(sort_dict(dict(Counter([i['sender_name'] for i in total_messages if 'photos' in i]))))
+    return pd.Series(sort_dict(dict(Counter([i['sender_name'] for i in total_messages if 'photos' in i])))).to_dict()
 
 def tag_correlation_matrix(participant_names, total_messages):
     participantmatrix = np.zeros((len(participant_names), len(participant_names)))
@@ -214,3 +246,4 @@ def gen_reply_matrix(total_messages_with_id, participant_names, normalizebymessa
     sns.heatmap(ld, square = True, annot = True, center = 0, vmin = 0, vmax =  max(flat_list(ld)) / 2, cmap= 'coolwarm',  xticklabels=participant_names,yticklabels=participant_names )
     plt.savefig('pictures/response_corr_matrix.png')
     # plt.close()
+
