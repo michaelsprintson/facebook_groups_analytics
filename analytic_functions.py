@@ -18,6 +18,20 @@ stopWords = set(stopwords.words('english'))
 def message_count(total_messages, participant_names):
     return sort_dict({pn:len([i for i in total_messages if i['sender_name'] == pn]) for pn in participant_names})
 
+def plot_dict(d):
+    k = list(d.keys())
+    v = d.values()
+    plt.figure(figsize = (10,10))
+    bars = plt.barh(k, v)
+    mb = max([x.get_width() for x in bars]) / 310.55
+    for bar, name, value in zip(bars, k, v):
+        height = bar.get_width()
+        xposition = bar.get_y()
+        # print(height, xposition)
+        plt.text(height, xposition + 0.3, value)
+        plt.text((height / 2) - (len(name)*mb), xposition + 0.3 ,  name)
+    plt.axis('off')
+
 def average_character_count(total_messages, participant_names):
     return sort_dict({pn:np.average([len(i['content']) for i in total_messages if i['sender_name'] == pn and 'content' in i.keys() ]) for pn in participant_names})
 
