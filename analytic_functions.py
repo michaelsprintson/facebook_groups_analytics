@@ -19,6 +19,7 @@ def message_count(total_messages, participant_names):
     return sort_dict({pn:len([i for i in total_messages if i['sender_name'] == pn]) for pn in participant_names})
 
 def plot_dict(d):
+    d = sort_dict(d, maxkeys = len(d) // 2)
     k = list(d.keys())
     v = d.values()
     plt.figure(figsize = (10,10))
