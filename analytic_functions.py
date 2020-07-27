@@ -73,8 +73,7 @@ def react_to_messages_ratio(total_messages, participant_names):
 
     react_message_df = pd.DataFrame({k:{'total reacted tos':sum(v['stats'][i] for i in allreacts if i in v['stats']), 'total messages': messagecounts[k]} for k,v in react_stats.items()}).T
     react_message_df['reacted_to_message_ratio'] = react_message_df['total reacted tos'] / react_message_df['total messages']
-    react_message_df.sort_values('reacted_to_message_ratio', ascending=False)
-    return react_message_df
+    return react_message_df.sort_values('reacted_to_message_ratio', ascending=False)['reacted_to_message_ratio'].to_dict()
 
 def reactions_recieved_by_participant(total_messages, participant):
     f_reactions_recieved_by_participant = reactions_for_participant(total_messages, participant)
