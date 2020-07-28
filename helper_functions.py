@@ -64,6 +64,8 @@ def render_mpl_table(data, col_width=3.0, row_height=0.625, font_size=14,
         fig, ax = plt.subplots(figsize=size)
         ax.axis('off')
 
+    fig.set_facecolor((1, 1, 1))
+
     mpl_table = ax.table(cellText=data.values, bbox=bbox, colLabels=data.columns, **kwargs)
 
     mpl_table.auto_set_font_size(False)

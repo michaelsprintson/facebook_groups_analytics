@@ -34,6 +34,12 @@ def plot_total_dicts(func, *args, **kwargs):
     plt.close()
     return gdf
 
+def plot_total_dicts_nowrap(gdf, sel):
+    plot_dict(gdf)
+    plt.title(sel.replace('_', ' '))
+    plt.savefig(f'pictures/{sel}.png')
+    plt.close()
+
 
 @wrap(plot_total_dicts)
 def message_count(total_messages, participant_names):
@@ -170,13 +176,14 @@ def nickname_changes_and_times(total_messages, participant):
 
     return pnamereturn, ptimereturn
 
-@wrap(plot_total_dicts)
 def group_name_changes_timeline(total_messages):
     group_name_changes = [i for i in total_messages if 'content' in i and 'named the group' in i['content']]
     names_to_times = [i['timestamp_ms'] for i in group_name_changes]
     namezip = list(zip(names_to_times[0:-1], names_to_times[1:]))
     times_per_name = [i[1] - i[0] for i in namezip]
     group_name_changes = sort_dict({group_name_changes[idx]['content'].split('named the group ')[1]:times_per_name[idx] for idx in range(len(group_name_changes)-1)})
+    if len(group_name_changes) > 0:
+        plot_total_dicts_nowrap(group_name_changes, 'group_name_changes')
     return group_name_changes
 
 def usage_participant_highlighted(total_messages, participant_names, specialpn):
