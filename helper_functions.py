@@ -35,7 +35,7 @@ def get_messages(messageloc = 'facebookdata/FredySupportGroup_ibkzDAfRNA copy/')
     total_messages_with_id = {i:total_messages[i] for i in range(len(total_messages))}
     return total_messages, total_messages_with_id, participant_names
 
-react_encoding_to_name = {'ð\x9f\x91\x8d': 'thumbs up', 'ð\x9f\x92\x97':'purple heart', 'ð\x9f\x98¢':'cry', 'ð\x9f\x98®':'wow', 'ð\x9f\x98\xa0':'angry', 'â\x9d¤':'pink heart', 'ð\x9f\x98\x86':'laughing', 'ð\x9f\x91\x8e': 'thumbs down', 'ð\x9f\x98\x8d': 'heart eyes'}
+react_encoding_to_name = defaultdict(lambda: "<custom emote>", {'ð\x9f\x91\x8d': 'thumbs up', 'ð\x9f\x92\x97':'purple heart', 'ð\x9f\x98¢':'cry', 'ð\x9f\x98®':'wow', 'ð\x9f\x98\xa0':'angry', 'â\x9d¤':'pink heart', 'ð\x9f\x98\x86':'laughing', 'ð\x9f\x91\x8e': 'thumbs down', 'ð\x9f\x98\x8d': 'heart eyes'})
 
 def function_hist(a, bins = 100, special = False):
 
