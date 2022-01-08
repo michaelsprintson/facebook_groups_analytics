@@ -71,7 +71,15 @@ def average_character_count(total_messages, participant_names):
 @wrap(plot_total_dicts)
 def total_character_count(total_messages, participant_names):
     return sort_dict({pn:sum([len(i['content']) for i in total_messages if i['sender_name'] == pn and 'content' in i.keys() ]) for pn in participant_names})
-    
+
+def most_reacted_to_message_list(total_messages_with_id):
+    reacted_to_messages = {idx:i['reactions'] for idx, i in enumerate(total_messages_with_id) if 'reactions' in i.keys()}
+    maxid = sorted(reacted_to_messages, key = lambda i: len(reacted_to_messages[i]))[-1]
+    reacted_to_message = total_messages_with_id[maxid]
+    reacted_to_message['reats_better'] = dict(Counter([react_encoding_to_name[i['reaction']] for i in reacted_to_message['reactions']]))
+    del reacted_to_message['reactions']
+    return reacted_to_message    
+
 def most_reacted_to_message(total_messages_with_id):
     reacted_to_messages = {idx:i['reactions'] for idx, i in total_messages_with_id.items() if 'reactions' in i.keys()}
     maxid = sorted(reacted_to_messages, key = lambda i: len(reacted_to_messages[i]))[-1]
